@@ -81,11 +81,7 @@ var require_command = __commonJS({
       }
     };
     function escapeData(s) {
-      return utils_1
-        .toCommandValue(s)
-        .replace(/%/g, '%25')
-        .replace(/\r/g, '%0D')
-        .replace(/\n/g, '%0A');
+      return utils_1.toCommandValue(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
     }
     function escapeProperty(s) {
       return utils_1
@@ -141,24 +137,24 @@ var require_core = __commonJS({
     var __awaiter =
       (exports2 && exports2.__awaiter) ||
       function (thisArg, _arguments, P, generator) {
-        function adopt(value) {
-          return value instanceof P
-            ? value
+        function adopt(value2) {
+          return value2 instanceof P
+            ? value2
             : new P(function (resolve) {
-                resolve(value);
+                resolve(value2);
               });
         }
         return new (P || (P = Promise))(function (resolve, reject) {
-          function fulfilled(value) {
+          function fulfilled(value2) {
             try {
-              step(generator.next(value));
+              step(generator.next(value2));
             } catch (e) {
               reject(e);
             }
           }
-          function rejected(value) {
+          function rejected(value2) {
             try {
-              step(generator['throw'](value));
+              step(generator['throw'](value2));
             } catch (e) {
               reject(e);
             }
@@ -226,9 +222,9 @@ var require_core = __commonJS({
       return val.trim();
     }
     exports2.getInput = getInput;
-    function setOutput(name, value) {
+    function setOutput(name, value2) {
       process.stdout.write(os.EOL);
-      command_1.issueCommand('set-output', { name }, value);
+      command_1.issueCommand('set-output', { name }, value2);
     }
     exports2.setOutput = setOutput;
     function setCommandEcho(enabled) {
@@ -281,8 +277,8 @@ var require_core = __commonJS({
       });
     }
     exports2.group = group;
-    function saveState(name, value) {
-      command_1.issueCommand('save-state', { name }, value);
+    function saveState(name, value2) {
+      command_1.issueCommand('save-state', { name }, value2);
     }
     exports2.saveState = saveState;
     function getState(name) {
@@ -294,4 +290,80 @@ var require_core = __commonJS({
 
 // main.js
 var core = require_core();
-core.info('Hello!');
+var currentEnvironment = core.getInput('current-environment');
+var variableName = core.getInput('variable-name');
+var devValue = core.getInput('dev-value');
+var qaValue = core.getInput('qa-value');
+var stageValue = core.getInput('stage-value');
+var prodValue = core.getInput('prod-value');
+var demoValue = core.getInput('demo-value');
+var uatValue = core.getInput('uat-value');
+if (!currentEnvironment || currentEnvironment.length === 0) {
+  core.setFailed('The current-environment argument must be provided.');
+  return;
+}
+if (!variableName || variableName.length === 0) {
+  core.setFailed('The variable-name argument must be provided.');
+  return;
+}
+var value = '';
+var env = '';
+var hasMatchingEnv = true;
+var valueWasProvided = true;
+switch (currentEnvironment.toLowerCase()) {
+  case 'd':
+  case 'dev':
+  case 'development':
+    value = devValue;
+    env = 'Dev';
+    valueWasProvided = devValue && devValue.length > 0;
+    break;
+  case 'q':
+  case 'qa':
+    value = qaValue;
+    env = 'QA';
+    valueWasProvided = qaValue && qaValue.length > 0;
+    break;
+  case 's':
+  case 'stg':
+  case 'stage':
+    value = stageValue;
+    env = 'Stage';
+    valueWasProvided = stageValue && stageValue.length > 0;
+    break;
+  case 'p':
+  case 'prod':
+  case 'production':
+    value = prodValue;
+    env = 'Prod';
+    valueWasProvided = prodValue && prodValue.length > 0;
+    break;
+  case 'o':
+  case 'demo':
+    value = demoValue;
+    env = 'Demo';
+    valueWasProvided = demoValue && demoValue.length > 0;
+    break;
+  case 'u':
+  case 'uat':
+    value = uatValue;
+    env = 'UAT';
+    valueWasProvided = uatValue && uatValue.length > 0;
+    break;
+  default:
+    hasMatchingEnv = false;
+    break;
+}
+if (hasMatchingEnv && valueWasProvided) {
+  core.info(`The '${variableName}' output and environment variable will be set to the ${env} value: '${value}'.`);
+} else if (hasMatchingEnv) {
+  core.info(
+    `The '${env}' environment was found but a value was not provided for it.  The '${variableName}' output and environment variable will be empty.`
+  );
+} else {
+  core.info(
+    `The '${currentEnvironment}' environment is not recognized.  The '${variableName}' output and environment variable will be empty.`
+  );
+}
+core.setOutput(variableName, value);
+core.exportVariable(variableName, value);
