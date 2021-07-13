@@ -1,80 +1,73 @@
-# javascript-action-template
+# set-variable-based-on-environment
 
-This template can be used to quickly start a new custom js action repository.  Click the `Use this template` button at the top to get started.
+This action can be used to set a single output and environment variable based on the current environment.  This action is configured for im-open's needs so the Environments this action recognizes are:
+| Environment | Accepted Values (case insensitive) |
+| ----------- | ---------------------------------- |
+| Dev         | *d, dev, development*              |
+| QA          | *q, qa*                            |
+| Stage       | *s, stg, stage*                    |
+| Prod        | *p, prod, production*              |
+| Demo        | *o, demo*                          |
+| UAT         | *u, uat*                           |
 
-## TODOs
-- Readme
-  - [ ] Update the Inputs section with the correct action inputs
-  - [ ] Update the Outputs section with the correct action outputs
-  - [ ] Update the Example section with the correct usage   
-- package.json
-  - [ ] Update the `name` with the new action value
-- main.js
-  - [ ] Implement your custom javascript action
-- action.yml
-  - [ ] Fill in the correct name, description, inputs and outputs
-- check-for-unstaged-changes.sh
-  - [ ] If you encounter a permission denied error when the build.yml workflow runs, execute the following command: `git update-index --chmod=+x ./check-for-unstaged-changes.sh`
-- .prettierrc.json
-  - [ ] Update any preferences you might have
-- CODEOWNERS
-  - [ ] Update as appropriate
-- Repository Settings
-  - [ ] On the *Options* tab check the box to *Automatically delete head branches*
-  - [ ] On the *Options* tab update the repository's visibility
-  - [ ] On the *Branches* tab add a branch protection rule
-    - [ ] Check *Require pull request reviews before merging*
-    - [ ] Check *Dismiss stale pull request approvals when new commits are pushed*
-    - [ ] Check *Require review from Code Owners*
-    - [ ] Check *Include Administrators*
-  - [ ] On the *Manage Access* tab add the appropriate groups
-- About Section (accessed on the main page of the repo, click the gear icon to edit)
-  - [ ] The repo should have a short description of what it is for
-  - [ ] Add one of the following topic tags:
-    | Topic Tag       | Usage                                    |
-    | --------------- | ---------------------------------------- |
-    | az              | For actions related to Azure             |
-    | code            | For actions related to building code     |
-    | certs           | For actions related to certificates      |
-    | db              | For actions related to databases         |
-    | git             | For actions related to Git               |
-    | iis             | For actions related to IIS               |
-    | microsoft-teams | For actions related to Microsoft Teams   |
-    | svc             | For actions related to Windows Services  |
-    | jira            | For actions related to Jira              |
-    | meta            | For actions related to running workflows |
-    | pagerduty       | For actions related to PagerDuty         |
-    | test            | For actions related to testing           |
-    | tf              | For actions related to Terraform         |
-  - [ ] Add any additional topics for an action if they apply    
-    
+The action itself is pretty simple and is a way to streamline the workflow by eliminating complex `case` or `if` statements that have to normalize the environment and figure out the correct value to use for which environment.  
+
+When using the action, you only need to provide values for the environments you would use.  If the action cannot find a value for the `current-environment`, the output and environment variables will be set to an empty string.
+   
 
 ## Inputs
-| Parameter | Is Required | Description           |
-| --------- | ----------- | --------------------- |
-| `input-1` | true        | Description goes here |
-| `input-2` | false       | Description goes here |
+| Parameter             | Is Required | Description                                                                                      |
+| --------------------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| `variable-name`       | true        | The name of the output variable and the environment variable that will be set                    |
+| `current-environment` | true        | The current environment                                                                          |
+| `dev-value`           | false       | The value the output and environment variable will be set to if Dev is the current environment   |
+| `qa-value`            | false       | The value the output and environment variable will be set to if QA is the current environment    |
+| `stage-value`         | false       | The value the output and environment variable will be set to if Stage is the current environment |
+| `prod-value`          | false       | The value the output and environment variable will be set to if Prod is the current environment  |
+| `demo-value`          | false       | The value the output and environment variable will be set to if Demo is the current environment  |
+| `uat-value`           | false       | The value the output and environment variable will be set to if UAT is the current environment   |
 
 ## Outputs
-| Output     | Description           |
-| ---------- | --------------------- |
-| `output-1` | Description goes here |
+| Output          | Description                                                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variable-name` | The output will match the value that corresponds with the current environment.  It will be named whatever was provided in the `variable-name` argument. |
 
 ## Example
 
 ```yml
-# TODO: Fill in the correct usage
-jobs:
-  job1:
-    runs-on: [self-hosted, ubuntu-20.04]
-    steps:
-      - uses: actions/checkout@v2
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'The environment to deploy to'
+        required: true
 
-      - name: Add Step Here
-        uses: im-open/this-repo@v1
+jobs:
+  parse-inputs:
+    runs-on: [ubuntu-20.04]
+    outputs:
+      RESOURCE_GROUP: ${{ steps.set-rgrp.outputs.RESOURCE_GROUP}}
+    steps:
+      - name: Set the Resource Group
+        id: set-rgrp
+        uses: im-open/set-variable-based-on-environment@v1.0.0
         with:
-          input-1: 'abc'
-          input-2: '123
+          variable-name: 'RESOURCE_GROUP'
+          current-environment: ${{ github.event.inputs.environment }}
+          dev-value: 'my-dev-RGRP'
+          stage-value: 'my-stage-RGRP'
+          prod-value: 'my-prod-RGRP'
+      
+      - name: Write out the Resource Group
+        run: echo "The current resource group is: '${{ env.RESOURCE_GROUP }}'"
+  
+  start-deploy:
+    runs-on: [ubuntu-20.04]
+    needs: [parse-inputs]
+    steps:
+      - run: echo "The current resource group is '${{ needs.parse-inputs.outputs.RESOURCE_GROUP }}'"
+
+      
 ```
 
 ## Recompiling

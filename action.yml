@@ -1,18 +1,36 @@
-name: 'JavaScript Action Template'
+name: 'set-variable-based-on-environment'
 
-description: 'Add description here'
+description: 'Used to set a single output and environment variable based on the current environment.'
 
 inputs:
-  input-1:
-    description: 'Add a description here'
+  variable-name:
+    description: The name of the output variable and the environment variable that will be set
     required: true
-  input-2:
-    description: 'Add a description here'
+  current-environment:
+    description: The urrent environment
+    required: true
+  dev-value:
+    description: The value of the output and environment variable if Dev is the current environment
+    required: false
+  qa-value:
+    description: The value of the output and environment variable if QA is the current environment
+    required: false
+  stage-value:
+    description: The value of the output and environment variable if Stage is the current environment
+    required: false
+  prod-value:
+    description: The value of the output and environment variable if Prod is the current environment
+    required: false
+  demo-value:
+    description: The value of the output and environment variable if Demo is the current environment
+    required: false
+  uat-value:
+    description: The value of the output and environment variable if UAT is the current environment
     required: false
 
 outputs:
-  output-1:
-    description: 'Add a description here'
+  variable-name:
+    description: 'The output will match the value that corresponds with the current environment.  It will be named whatever was provided in the `variable-name` argument.'
 
 runs:
   using: 'node12'
